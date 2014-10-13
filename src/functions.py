@@ -23,3 +23,12 @@ def initialize_screen():
     screen = pygame.display.set_mode(customization.INIT_SCREEN_SIZE, flags)
     screen.fill(customization.INIT_BACKGROUND)
     return screen
+
+def initialize_clock():
+    return pygame.time.Clock()
+
+def tick(clock):
+    clock.tick(customization.DISPLAY_CLOCK_TICKS)
+    
+def initialize_background():
+    return customization.INIT_BACKGROUND
