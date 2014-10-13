@@ -3,18 +3,16 @@ Created on Oct 12, 2014
 
 @author: Richard
 '''
-import pygame, os, sys
-from pygame.locals import HWSURFACE, DOUBLEBUF, RESIZABLE, QUIT
+import pygame, sys, customization
+from pygame.locals import QUIT
+from functions import set_up_pygame, initialize_screen
 
-SCREEN_SIZE = (800, 600)
-WHITE = (255, 255, 255)
-
-os.environ['SDL_VIDEO_CENTERED'] = '1'  # center the window 
-pygame.init()
-screen = pygame.display.set_mode(SCREEN_SIZE, HWSURFACE | DOUBLEBUF | RESIZABLE)
-screen.fill(WHITE)
+set_up_pygame()
+screen = initialize_screen()
+background = customization.INIT_BACKGROUND
 
 while True:
+    screen.fill(background)
     for event in pygame.event.get():
         if event.type == QUIT:
             pygame.quit()
