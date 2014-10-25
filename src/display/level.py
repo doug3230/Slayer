@@ -8,11 +8,13 @@ import pygame, game
 class LevelImages:
     WALL = None
     FLOOR = None
+    LADDER = None
     
     @staticmethod
     def initialize_images():
         LevelImages.WALL = game.load_image("wall.gif")
         LevelImages.FLOOR = game.load_image("floor.gif")
+        LevelImages.LADDER = game.load_image("ladder.gif")
         LevelImages.resize_images()
         return
     
@@ -21,6 +23,7 @@ class LevelImages:
         screen_grid = game.screen_grid()
         LevelImages.WALL = game.resize_image(LevelImages.WALL, screen_grid.tile_width, screen_grid.tile_height)
         LevelImages.FLOOR = game.resize_image(LevelImages.FLOOR, screen_grid.tile_width, screen_grid.tile_height)
+        LevelImages.LADDER = game.resize_image(LevelImages.LADDER, screen_grid.tile_width, screen_grid.tile_height)
         return
 
 class Level:
@@ -31,15 +34,30 @@ class Level:
         line = file_handle.readline().strip()
         self.cols = int(line.split("=")[1])
         self.elements = []
+        self.ladder_indices = []
+        self.ladder_links = {}
         
-        line = file_handle.readline().strip()
-        while line != "":
+        line = file_handle.readline().rstrip()
+        for r in range(self.rows):
             new_row = []
-            for char in line:
-                new_row.append(char)
+            for c in range(self.cols):
+                if c >= len(line):
+                    new_row.append(None)
+                else:
+                    if line[c] == "L":
+                        self.ladder_indices.append((c, r))
+                    new_row.append(line[c])
             self.elements.append(new_row)
-            line = file_handle.readline().strip()
+            line = file_handle.readline().rstrip()
         file_handle.close()
+        
+        if self.ladder_indices != []:
+            link_handle = open(game.path_to_level(file_name[:-4] + "_links.txt"))
+            ladder_number = 0
+            for line in link_handle:
+                self.ladder_links[self.ladder_indices[ladder_number]] = line.strip()
+                ladder_number += 1
+            link_handle.close() 
         return
     
     def imageAt(self, x_index, y_index):
@@ -51,7 +69,14 @@ class Level:
             image = LevelImages.WALL
         elif element == "F":
             image = LevelImages.FLOOR
+        elif element == "L":
+            image = LevelImages.LADDER
         return image
+    
+    def ladder_index(self, ladder_number):
+        if not (0 <= ladder_number < len(self.ladder_indices)):
+            return None
+        return self.ladder_indices[ladder_number]
         
     def blitToScreen(self, x_loc, y_loc):
         screen_grid = game.screen_grid()
@@ -75,3 +100,27 @@ class Level:
                 image_y += screen_grid.tile_height
             image_x += screen_grid.tile_width
         return
+    
+    def isWall(self, x_index, y_index):
+        if self.imageAt(x_index, y_index) == None:
+            return False
+        return self.elements[y_index][x_index] == "W"
+    
+    def isLadder(self, x_index, y_index):
+        if self.imageAt(x_index, y_index) == None:
+            return False
+        return self.elements[y_index][x_index] == "L"
+    
+    def linkAt(self, x_index, y_index):
+        info = self.ladder_links[(x_index, y_index)]
+        link = info.split(",")
+        return link
+    
+    def load_level(self, x_index, y_index):
+        link = self.linkAt(x_index, y_index)
+        level_name = link[0]
+        level = Level(level_name)
+        location = level.ladder_index(int(link[1]))
+        game.Location.set_center_x_index(location[0])
+        game.Location.set_center_y_index(location[1])
+        return level
