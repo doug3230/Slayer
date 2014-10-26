@@ -3,32 +3,38 @@ Created on Oct 18, 2014
 
 @author: Richard
 '''
-import pygame, game
+import pygame
 
 class LevelImages:
     WALL = None
     FLOOR = None
     LADDER = None
+    MONSTER = None
     
     @staticmethod
     def initialize_images():
-        LevelImages.WALL = game.load_image("wall.gif")
-        LevelImages.FLOOR = game.load_image("floor.gif")
-        LevelImages.LADDER = game.load_image("ladder.gif")
+        from game import load_image
+        LevelImages.WALL = load_image("wall.gif")
+        LevelImages.FLOOR = load_image("floor.gif")
+        LevelImages.LADDER = load_image("ladder.gif")
+        LevelImages.MONSTER = load_image("monster.gif")
         LevelImages.resize_images()
         return
     
     @staticmethod
     def resize_images():
-        screen_grid = game.screen_grid()
-        LevelImages.WALL = game.resize_image(LevelImages.WALL, screen_grid.tile_width, screen_grid.tile_height)
-        LevelImages.FLOOR = game.resize_image(LevelImages.FLOOR, screen_grid.tile_width, screen_grid.tile_height)
-        LevelImages.LADDER = game.resize_image(LevelImages.LADDER, screen_grid.tile_width, screen_grid.tile_height)
+        from game import screen_grid, resize_image
+        screen_grid = screen_grid()
+        LevelImages.WALL = resize_image(LevelImages.WALL, screen_grid.tile_width, screen_grid.tile_height)
+        LevelImages.FLOOR = resize_image(LevelImages.FLOOR, screen_grid.tile_width, screen_grid.tile_height)
+        LevelImages.LADDER = resize_image(LevelImages.LADDER, screen_grid.tile_width, screen_grid.tile_height)
+        LevelImages.MONSTER = resize_image(LevelImages.MONSTER, screen_grid.tile_width, screen_grid.tile_height)
         return
 
 class Level:
     def __init__(self, file_name):
-        file_handle = open(game.path_to_level(file_name), "r")
+        from game import path_to_level
+        file_handle = open(path_to_level(file_name), "r")
         line = file_handle.readline().strip()
         self.rows = int(line.split("=")[1])
         line = file_handle.readline().strip()
@@ -52,7 +58,7 @@ class Level:
         file_handle.close()
         
         if self.ladder_indices != []:
-            link_handle = open(game.path_to_level(file_name[:-4] + "_links.txt"))
+            link_handle = open(path_to_level(file_name[:-4] + "_links.txt"))
             ladder_number = 0
             for line in link_handle:
                 self.ladder_links[self.ladder_indices[ladder_number]] = line.strip()
@@ -71,6 +77,8 @@ class Level:
             image = LevelImages.FLOOR
         elif element == "L":
             image = LevelImages.LADDER
+        elif element == "M":
+            image = LevelImages.MONSTER
         return image
     
     def ladder_index(self, ladder_number):
@@ -79,7 +87,8 @@ class Level:
         return self.ladder_indices[ladder_number]
         
     def blitToScreen(self, x_loc, y_loc):
-        screen_grid = game.screen_grid()
+        from game import screen, screen_grid
+        screen_grid = screen_grid()
         screen_rows = screen_grid.rows
         screen_cols = screen_grid.cols
         rows_to_top = screen_rows // 2
@@ -90,7 +99,7 @@ class Level:
         image_x = 0
         image_y = 0
         
-        screen = game.screen()
+        screen = screen()
         for x_index in range(screen_cols):
             image_y = 0
             for y_index in range(screen_rows):
@@ -111,16 +120,22 @@ class Level:
             return False
         return self.elements[y_index][x_index] == "L"
     
+    def isMonster(self, x_index, y_index):
+        if self.imageAt(x_index, y_index) == None:
+            return False
+        return self.elements[y_index][x_index] == "M"
+    
     def linkAt(self, x_index, y_index):
         info = self.ladder_links[(x_index, y_index)]
         link = info.split(",")
         return link
     
     def load_level(self, x_index, y_index):
+        from game import Overworld
         link = self.linkAt(x_index, y_index)
         level_name = link[0]
         level = Level(level_name)
         location = level.ladder_index(int(link[1]))
-        game.Location.set_center_x_index(location[0])
-        game.Location.set_center_y_index(location[1])
+        Overworld.set_center_x_index(location[0])
+        Overworld.set_center_y_index(location[1])
         return level
